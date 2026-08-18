@@ -1,6 +1,8 @@
+DELETE TABLE IF EXISTS tasks;
+
 CREATE TYPE TASK_STATUS AS ENUM ('todo', 'in-progress', 'done');
 
-CREATE TABLE tasks (
+CREATE TABLE IF NOT EXISTS tasks (
     id SERIAL PRIMARY KEY,
     title VARCHAR(50),
     description TEXT NOT NULL,

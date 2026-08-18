@@ -1,6 +1,7 @@
 services:
   api:
     build: ./
+    image: restapi
     container_name: restapi
     depends_on:
       - db
