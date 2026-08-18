@@ -1,0 +1,27 @@
+services:
+  api:
+    build: ./
+    container_name: restapi
+    depends_on:
+      - db
+    environment:
+      - DB_URL=postgres://admin:pass@db:5432/tasksdb?sslmode=disable
+      - PORT=8080
+    ports:
+      - "8080:8080"
+  db:
+    image: postgres:16-alpine
+    restart: always
+    container_name: pgdb
+    environment:
+      - POSTGRES_DB=tasksdb
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_USER=admin
+    volumes:
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - PGDATA:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  
+volumes:
+  PGDATA:
