@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/vonrimez/TaskAPI/internal/database"
-	_ "github.com/vonrimez/TaskAPI/internal/handling"
 	handlers "github.com/vonrimez/TaskAPI/internal/handling"
 )
 
@@ -40,20 +39,22 @@ func main() {
 		user := v1.Group("/user")
 		{
 			user.POST("/login", hdl.UserLogin)
-			// user.POST("/register", ) TODO
 		}
 		tasks := v1.Group("/tasks")
 		tasks.Use(hdl.JWTAuth)
 		{
 			tasks.GET("/list", hdl.GetTasks)
 			tasks.GET("/:id", hdl.GetTaskById)
-			tasks.DELETE("/delete/:id", hdl.DeleteTask)
-			tasks.POST("/update/:id", hdl.UpdateTask)
-			tasks.PUT("/create", hdl.CreateTask)
+			tasks.DELETE("/:id", hdl.DeleteTask)
+			tasks.PUT("/:id", hdl.UpdateTask)
+			tasks.POST("/create", hdl.CreateTask)
 		}
 	}
 
 	fmt.Println("Running server")
 
-	taskApi.Run(PORT)
+	err = taskApi.Run(PORT)
+	if err != nil {
+		panic(err)
+	}
 }

@@ -3,6 +3,8 @@ package database
 import (
 	"database/sql"
 	"fmt"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func EstablishConnection(dbDriver string, dbUrl string) (*sql.DB, error) {
