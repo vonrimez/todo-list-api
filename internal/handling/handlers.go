@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"database/sql"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -18,6 +20,10 @@ func GetNewHandler(tasksdb *database.TasksDB) *Handler {
 }
 
 func (hdl *Handler) UserLogin(context *gin.Context) {
+
+}
+
+func (hdl *Handler) UserRegister(context *gin.Context) {
 
 }
 
@@ -55,6 +61,10 @@ func (hdl *Handler) DeleteTask(context *gin.Context) {
 	}
 
 	err = hdl.tasksdb.DeleteTask(id)
+	if errors.Is(err, sql.ErrNoRows) {
+		context.String(http.StatusNotFound, "Not found")
+		return
+	}
 	if err != nil {
 		context.String(http.StatusInternalServerError, err.Error())
 		return
@@ -78,6 +88,10 @@ func (hdl *Handler) UpdateTask(context *gin.Context) {
 	}
 
 	err = hdl.tasksdb.UpdateTask(id, t)
+	if errors.Is(err, sql.ErrNoRows) {
+		context.String(http.StatusNotFound, "Not found")
+		return
+	}
 	if err != nil {
 		context.Status(http.StatusInternalServerError)
 		return

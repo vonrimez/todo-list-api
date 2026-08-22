@@ -27,7 +27,7 @@ func (tdb *TasksDB) execWithError(query string, args ...any) error {
 	return nil
 }
 
-func (tdb *TasksDB) GetTasks() ([]models.Task, error) {
+func (tdb *TasksDB) GetTasks(userID int) ([]models.Task, error) {
 	query := `SELECT * FROM tasks;`
 	rows, err := tdb.db.Query(query)
 	if err != nil {
@@ -55,9 +55,9 @@ func (tdb *TasksDB) GetTasks() ([]models.Task, error) {
 	return tasks, nil
 }
 
-func (tdb *TasksDB) GetTaskById(id int) (models.Task, error) {
+func (tdb *TasksDB) GetTaskById(taskID int, userID int) (models.Task, error) {
 	query := `SELECT * FROM tasks WHERE id = $1;`
-	row := tdb.db.QueryRow(query, id)
+	row := tdb.db.QueryRow(query, taskID)
 	if err := row.Err(); err != nil {
 		return models.Task{}, err
 	}
@@ -74,7 +74,7 @@ func (tdb *TasksDB) GetTaskById(id int) (models.Task, error) {
 	return t, nil
 }
 
-func (tdb *TasksDB) CreateTask(task models.TaskCreateInput) error {
+func (tdb *TasksDB) CreateTask(task models.TaskCreateInput, userID int) error {
 	query := `
 	INSERT INTO tasks (title, description, status) 
 	VALUES (
@@ -87,7 +87,7 @@ func (tdb *TasksDB) CreateTask(task models.TaskCreateInput) error {
 	return tdb.execWithError(query, task.Title, task.Description, task.Status)
 }
 
-func (tdb *TasksDB) UpdateTask(id int, task models.TaskUpdateInput) error {
+func (tdb *TasksDB) UpdateTask(task models.TaskUpdateInput, taskID int, userID int) error {
 	query := `
 	UPDATE tasks 
 	SET 
@@ -98,10 +98,10 @@ func (tdb *TasksDB) UpdateTask(id int, task models.TaskUpdateInput) error {
 	WHERE id = $4;
 	`
 
-	return tdb.execWithError(query, task.Title, task.Description, task.Status, id)
+	return tdb.execWithError(query, task.Title, task.Description, task.Status, taskID)
 }
 
-func (tdb *TasksDB) DeleteTask(id int) error {
+func (tdb *TasksDB) DeleteTask(taskID int, userID int) error {
 	query := `DELETE FROM tasks WHERE id = $1;`
-	return tdb.execWithError(query, id)
+	return tdb.execWithError(query, taskID)
 }

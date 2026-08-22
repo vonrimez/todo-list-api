@@ -39,6 +39,7 @@ func main() {
 		user := v1.Group("/user")
 		{
 			user.POST("/login", hdl.UserLogin)
+			user.POST("/register", hdl.UserRegister)
 		}
 		tasks := v1.Group("/tasks")
 		tasks.Use(hdl.JWTAuth)
