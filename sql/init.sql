@@ -3,6 +3,13 @@ DROP TABLE IF EXISTS users;
 
 CREATE TYPE TASK_STATUS AS ENUM ('todo', 'in-progress', 'done');
 
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(50),
+    email VARCHAR(50) UNIQUE,
+    password VARCHAR(255)
+);
+
 CREATE TABLE tasks (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -11,9 +18,4 @@ CREATE TABLE tasks (
     status TASK_STATUS,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    jwt TEXT
 );

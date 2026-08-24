@@ -3,9 +3,8 @@ services:
     build: ./
     image: restapi
     container_name: restapi
-    environment:
-      - DB_URL=postgres://admin:pass@db:5432/tasksdb?sslmode=disable
-      - PORT=:8080
+    env_file:
+      - .env.api
     ports:
       - "8080:8080"
     depends_on:
@@ -15,10 +14,8 @@ services:
     image: postgres:16-alpine
     restart: always
     container_name: pgdb
-    environment:
-      - POSTGRES_DB=tasksdb
-      - POSTGRES_PASSWORD=pass
-      - POSTGRES_USER=admin
+    env_file:
+      - .env.db
     volumes:
       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
       - PGDATA:/var/lib/postgresql/data

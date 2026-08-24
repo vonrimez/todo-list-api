@@ -2,24 +2,21 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	"github.com/vonrimez/TaskAPI/internal/config"
 	"github.com/vonrimez/TaskAPI/internal/database"
-	handlers "github.com/vonrimez/TaskAPI/internal/handling"
+	"github.com/vonrimez/TaskAPI/internal/handlers"
 )
 
 func main() {
 
-	godotenv.Load()
-	DB_URL := os.Getenv("DB_URL")
-	PORT := os.Getenv("PORT")
+	cfg := config.LoadConfig()
 
 	fmt.Println("Starting server")
 	fmt.Println("Connecting with database...")
 
-	db, err := database.EstablishConnection("pgx", DB_URL)
+	db, err := database.EstablishConnection("pgx", cfg.DB_URL)
 	if err != nil {
 		panic(err)
 	}
@@ -28,8 +25,11 @@ func main() {
 	fmt.Println("Server successfully connected with database")
 
 	tasksdb := database.GetNewTasksDB(db)
+	usersdb := database.GetNewUserDB(db)
 
-	hdl := handlers.GetNewHandler(tasksdb)
+	hdl := handlers.GetNewHandler(
+		tasksdb, usersdb, cfg,
+	)
 
 	taskApi := gin.New()
 	taskApi.Use(gin.Logger())
@@ -38,7 +38,7 @@ func main() {
 	{
 		user := v1.Group("/user")
 		{
-			user.POST("/login", hdl.UserLogin)
+			user.GET("/login", hdl.UserLogin)
 			user.POST("/register", hdl.UserRegister)
 		}
 		tasks := v1.Group("/tasks")
@@ -54,7 +54,7 @@ func main() {
 
 	fmt.Println("Running server")
 
-	err = taskApi.Run(PORT)
+	err = taskApi.Run(cfg.PORT)
 	if err != nil {
 		panic(err)
 	}
