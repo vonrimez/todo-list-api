@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/vonrimez/TaskAPI/internal/auth"
 	"github.com/vonrimez/TaskAPI/internal/models"
 )
 
@@ -40,9 +41,13 @@ func (udb *UsersDB) CreateUser(ur models.UserRegisterInput) (*models.User, error
 	VALUES ($1, $2, $3) 
 	RETURNING *;
 	`
-	// password hashing logic
 
-	return udb.execWithError(query, ur.Name, ur.Email, ur.Pass)
+	encryptedPass, err := auth.HashPassword(ur.Pass)
+	if err != nil {
+		return nil, err
+	}
+
+	return udb.execWithError(query, ur.Name, ur.Email, encryptedPass)
 }
 
 func (udb *UsersDB) GetJWT(userID int, secret string) (string, error) {
@@ -76,7 +81,9 @@ func (udb *UsersDB) LoginUser(ul models.UserLoginInput, secret string) (string, 
 		return "", fmt.Errorf("Email is invalid")
 	}
 
-	// compare password and proc error
+	if !auth.IsCorrectPassword(ul.Pass, fetchedUser.Pass) {
+		return "", fmt.Errorf("Password is incorrect")
+	}
 
 	return udb.GetJWT(fetchedUser.ID, secret)
 }
