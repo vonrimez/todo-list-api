@@ -21,8 +21,11 @@ func (tdb *TasksDB) execWithError(query string, args ...any) error {
 		return err
 	}
 	rA, err := res.RowsAffected()
-	if rA == 0 || err != nil {
+	if rA == 0 {
 		return fmt.Errorf("error: no action was taken on the database")
+	}
+	if err != nil {
+		return err
 	}
 	return nil
 }
