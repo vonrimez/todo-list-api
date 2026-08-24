@@ -15,11 +15,11 @@ import (
 
 type Handler struct {
 	tasksdb *database.TasksDB
-	usersdb *database.UserDB
+	usersdb *database.UsersDB
 	cfg     *config.Config
 }
 
-func GetNewHandler(tasksdb *database.TasksDB, userdb *database.UserDB, cfg *config.Config) *Handler {
+func GetNewHandler(tasksdb *database.TasksDB, userdb *database.UsersDB, cfg *config.Config) *Handler {
 	return &Handler{
 		tasksdb: tasksdb, usersdb: userdb, cfg: cfg,
 	}
@@ -97,11 +97,13 @@ func (hdl *Handler) GetTasks(context *gin.Context) {
 	userID, err := getUserID(context)
 	if err != nil {
 		context.Status(http.StatusInternalServerError)
+		context.Error(err)
 		return
 	}
 	tasks, err := hdl.tasksdb.GetTasks(userID)
 	if err != nil {
 		context.Status(http.StatusInternalServerError)
+		context.Error(err)
 		return
 	}
 	context.JSON(http.StatusOK, tasks)
@@ -138,7 +140,7 @@ func (hdl *Handler) DeleteTask(context *gin.Context) {
 		context.Status(http.StatusInternalServerError)
 		return
 	}
-	err = hdl.tasksdb.DeleteTask(taskID, userID)
+	dt, err := hdl.tasksdb.DeleteTask(taskID, userID)
 	if errors.Is(err, sql.ErrNoRows) {
 		context.String(http.StatusNotFound, "Not found")
 		return
@@ -147,7 +149,7 @@ func (hdl *Handler) DeleteTask(context *gin.Context) {
 		context.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	context.Status(http.StatusOK)
+	context.String(http.StatusOK, hdl.tasksdb.GetTaskInfo(dt))
 }
 
 func (hdl *Handler) UpdateTask(context *gin.Context) {
@@ -168,7 +170,7 @@ func (hdl *Handler) UpdateTask(context *gin.Context) {
 		context.Status(http.StatusInternalServerError)
 		return
 	}
-	err = hdl.tasksdb.UpdateTask(t, taskID, userID)
+	ut, err := hdl.tasksdb.UpdateTask(t, taskID, userID)
 	if errors.Is(err, sql.ErrNoRows) {
 		context.String(http.StatusNotFound, "Not found")
 		return
@@ -177,7 +179,7 @@ func (hdl *Handler) UpdateTask(context *gin.Context) {
 		context.Status(http.StatusInternalServerError)
 		return
 	}
-	context.JSON(http.StatusOK, t)
+	context.String(http.StatusOK, hdl.tasksdb.GetTaskInfo(ut))
 }
 
 func (hdl *Handler) CreateTask(context *gin.Context) {
@@ -190,14 +192,16 @@ func (hdl *Handler) CreateTask(context *gin.Context) {
 
 	userID, err := getUserID(context)
 	if err != nil {
+		fmt.Println(1, err)
 		context.Status(http.StatusInternalServerError)
 		return
 	}
 
-	err = hdl.tasksdb.CreateTask(tc, userID)
+	ct, err := hdl.tasksdb.CreateTask(tc, userID)
 	if err != nil {
+		fmt.Println(2, err)
 		context.Status(http.StatusInternalServerError)
 		return
 	}
-	context.JSON(http.StatusOK, tc)
+	context.String(http.StatusOK, hdl.tasksdb.GetTaskInfo(ct))
 }

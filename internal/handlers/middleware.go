@@ -37,5 +37,6 @@ func (hdl *Handler) JWTAuth(context *gin.Context) {
 }
 
 func (hdl *Handler) StatusLogger(context *gin.Context) {
-
+	context.Next()
+	fmt.Println(context.Err())
 }

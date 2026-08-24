@@ -9,16 +9,16 @@ import (
 	"github.com/vonrimez/TaskAPI/internal/models"
 )
 
-type UserDB struct {
+type UsersDB struct {
 	db *sql.DB
 }
 
-func GetNewUserDB(db *sql.DB) *UserDB {
-	return &UserDB{db: db}
+func GetNewUserDB(db *sql.DB) *UsersDB {
+	return &UsersDB{db: db}
 }
 
 // need return values: id, name, email, pass
-func (udb *UserDB) execWithError(query string, args ...any) (*models.User, error) {
+func (udb *UsersDB) execWithError(query string, args ...any) (*models.User, error) {
 	row := udb.db.QueryRow(query, args...)
 	u := models.User{}
 	err := row.Scan(
@@ -30,20 +30,22 @@ func (udb *UserDB) execWithError(query string, args ...any) (*models.User, error
 	return &u, nil
 }
 
-func (udb *UserDB) GetUserInfo(m *models.User) string {
-	return fmt.Sprintf("[ID:%d]=%s:%s_%s\n", m.ID, m.Email, m.Name, m.Pass)
+func (udb *UsersDB) GetUserInfo(u *models.User) string {
+	return fmt.Sprintf("[ID:%d]=%s:%s_%s\n", u.ID, u.Email, u.Name, u.Pass)
 }
 
-func (udb *UserDB) CreateUser(ur models.UserRegisterInput) (*models.User, error) {
+func (udb *UsersDB) CreateUser(ur models.UserRegisterInput) (*models.User, error) {
 	query := `
-	INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *;
+	INSERT INTO users (name, email, password) 
+	VALUES ($1, $2, $3) 
+	RETURNING *;
 	`
 	// password hashing logic
 
 	return udb.execWithError(query, ur.Name, ur.Email, ur.Pass)
 }
 
-func (udb *UserDB) GetJWT(userID int, secret string) (string, error) {
+func (udb *UsersDB) GetJWT(userID int, secret string) (string, error) {
 	type Claims struct {
 		UserID int
 		jwt.RegisteredClaims
@@ -61,9 +63,10 @@ func (udb *UserDB) GetJWT(userID int, secret string) (string, error) {
 	return token.SignedString([]byte(secret))
 }
 
-func (udb *UserDB) LoginUser(ul models.UserLoginInput, secret string) (string, error) {
+func (udb *UsersDB) LoginUser(ul models.UserLoginInput, secret string) (string, error) {
 	query := `
-	SELECT * FROM users WHERE email = $1;
+	SELECT * FROM users 
+	WHERE email = $1;
 	`
 	row := udb.db.QueryRow(query, ul.Email)
 
