@@ -31,14 +31,14 @@ func main() {
 		tasksdb, usersdb, cfg,
 	)
 
-	taskApi := gin.New()
-	taskApi.Use(gin.Logger())
+	taskApi := gin.Default()
+	taskApi.Use(hdl.StatusLogger)
 
 	v1 := taskApi.Group("/api/v1")
 	{
 		user := v1.Group("/user")
 		{
-			user.GET("/login", hdl.UserLogin)
+			user.POST("/login", hdl.UserLogin)
 			user.POST("/register", hdl.UserRegister)
 		}
 		tasks := v1.Group("/tasks")

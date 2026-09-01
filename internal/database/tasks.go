@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/vonrimez/TaskAPI/internal/models"
 )
@@ -28,20 +27,14 @@ func (tdb *TasksDB) execWithError(query string, args ...any) (*models.Task, erro
 	return &t, nil
 }
 
-func (tdb *TasksDB) GetTaskInfo(t *models.Task) string {
-	return fmt.Sprintf("[ID:%d]=%s (%s) => %s [%v : %v]\n", t.ID, t.Title, t.Description, t.Status, t.Created_at, t.Updated_at)
-}
-
 func (tdb *TasksDB) GetTasks(userID int) ([]models.TaskGetOutput, error) {
 	query := `
 	SELECT id, title, description, status, TO_CHAR(created_at, 'DD.MM.YYY HH24:MI:SS'), TO_CHAR(updated_at, 'DD.MM.YYY HH24:MI:SS') 
-	FROM tasks;
+	FROM tasks
+	WHERE user_id = $1;
 	`
-	rows, err := tdb.db.Query(query)
+	rows, err := tdb.db.Query(query, userID)
 	if err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	defer rows.Close()
@@ -59,6 +52,9 @@ func (tdb *TasksDB) GetTasks(userID int) ([]models.TaskGetOutput, error) {
 		}
 		tasks = append(tasks, t)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
 	return tasks, nil
 }
@@ -67,9 +63,10 @@ func (tdb *TasksDB) GetTaskById(taskID int, userID int) (models.TaskGetOutput, e
 	query := `
 	SELECT id, title, description, status, TO_CHAR(created_at, 'DD.MM.YYY HH24:MI:SS'), TO_CHAR(updated_at, 'DD.MM.YYY HH24:MI:SS') 
 	FROM tasks 
-	WHERE id = $1;
+	WHERE id = $1
+	AND user_id = $2;
 	`
-	row := tdb.db.QueryRow(query, taskID)
+	row := tdb.db.QueryRow(query, taskID, userID)
 	if err := row.Err(); err != nil {
 		return models.TaskGetOutput{}, err
 	}
@@ -80,7 +77,7 @@ func (tdb *TasksDB) GetTaskById(taskID int, userID int) (models.TaskGetOutput, e
 		&t.ID, &t.Title, &t.Description, &t.Status, &t.Created_at, &t.Updated_at,
 	)
 	if err != nil {
-		return models.TaskGetOutput{}, nil
+		return models.TaskGetOutput{}, err
 	}
 
 	return t, nil

@@ -29,7 +29,6 @@ func (hdl *Handler) JWTAuth(context *gin.Context) {
 	})
 
 	if err != nil || !token.Valid {
-		fmt.Println(err, token.Valid)
 		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		return
 	}
@@ -38,5 +37,5 @@ func (hdl *Handler) JWTAuth(context *gin.Context) {
 
 func (hdl *Handler) StatusLogger(context *gin.Context) {
 	context.Next()
-	fmt.Println(context.Err())
+	fmt.Println("[ERR_LOGER]", context.Err())
 }

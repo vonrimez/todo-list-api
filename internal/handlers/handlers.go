@@ -50,23 +50,26 @@ func (hdl *Handler) UserLogin(context *gin.Context) {
 	ul := models.UserLoginInput{}
 	err := context.ShouldBindJSON(&ul)
 	if err != nil {
-		context.Status(http.StatusBadRequest)
+		context.JSON(http.StatusBadRequest, "form is incorrect")
+		context.Error(err)
 		return
 	}
-	jwt, err := hdl.usersdb.LoginUser(ul, hdl.cfg.JWT_SECRET)
+	u, err := hdl.usersdb.LoginUser(ul, hdl.cfg.JWT_SECRET)
 	if err != nil {
-		context.String(http.StatusBadRequest, err.Error())
+		context.JSON(http.StatusBadRequest, err.Error())
+		context.Error(err)
+		return
+	}
+	jwt, err := hdl.usersdb.GetJWT(u.ID, hdl.cfg.JWT_SECRET)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, "internal error")
+		context.Error(err)
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{
-		"JWT": jwt, "USER": hdl.usersdb.GetUserInfo(
-			&models.User{
-				ID:    ul.ID,
-				Name:  ul.Name,
-				Email: ul.Email,
-				Pass:  ul.Pass,
-			},
-		),
+		"access_token": jwt,
+		"token_type":   "Bearer",
+		"user":         &u,
 	})
 }
 
@@ -74,35 +77,39 @@ func (hdl *Handler) UserRegister(context *gin.Context) {
 	ur := models.UserRegisterInput{}
 	err := context.ShouldBindJSON(&ur)
 	if err != nil {
-		context.Status(http.StatusBadRequest)
+		context.JSON(http.StatusBadRequest, "form is incorrect")
+		context.Error(err)
 		return
 	}
 	u, err := hdl.usersdb.CreateUser(ur)
 	if err != nil {
-		context.Status(http.StatusInternalServerError)
+		context.JSON(http.StatusInternalServerError, "internal error")
+		context.Error(err)
 		return
 	}
 	jwt, err := hdl.usersdb.GetJWT(u.ID, hdl.cfg.JWT_SECRET)
 	if err != nil {
-		fmt.Println(err)
-		context.Status(http.StatusInternalServerError)
+		context.JSON(http.StatusInternalServerError, "internal error")
+		context.Error(err)
 		return
 	}
 	context.JSON(http.StatusCreated, gin.H{
-		"JWT": jwt, "USER": hdl.usersdb.GetUserInfo(u),
+		"access_token": jwt,
+		"token_type":   "Bearer",
+		"user":         &u,
 	})
 }
 
 func (hdl *Handler) GetTasks(context *gin.Context) {
 	userID, err := getUserID(context)
 	if err != nil {
-		context.Status(http.StatusInternalServerError)
+		context.JSON(http.StatusInternalServerError, "internal error")
 		context.Error(err)
 		return
 	}
 	tasks, err := hdl.tasksdb.GetTasks(userID)
 	if err != nil {
-		context.Status(http.StatusInternalServerError)
+		context.JSON(http.StatusInternalServerError, "internal error")
 		context.Error(err)
 		return
 	}
@@ -112,96 +119,108 @@ func (hdl *Handler) GetTasks(context *gin.Context) {
 func (hdl *Handler) GetTaskById(context *gin.Context) {
 	taskID, err := getTaskID(context)
 	if err != nil {
-		context.String(http.StatusBadRequest, err.Error())
+		context.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 	userID, err := getUserID(context)
 	if err != nil {
-		context.Status(http.StatusInternalServerError)
+		context.JSON(http.StatusInternalServerError, "internal error")
+		context.Error(err)
 		return
 	}
-	task, err := hdl.tasksdb.GetTaskById(taskID, userID)
+	t, err := hdl.tasksdb.GetTaskById(taskID, userID)
 	if err != nil {
-		context.Status(http.StatusInternalServerError)
+		context.JSON(http.StatusInternalServerError, "internal error")
+		context.Error(err)
 		return
 	}
 
-	context.JSON(http.StatusOK, task)
+	context.JSON(http.StatusOK, t)
 }
 
 func (hdl *Handler) DeleteTask(context *gin.Context) {
 	taskID, err := getTaskID(context)
 	if err != nil {
-		context.String(http.StatusBadRequest, err.Error())
+		context.JSON(http.StatusBadRequest, err.Error())
+		context.Error(err)
 		return
 	}
 	userID, err := getUserID(context)
 	if err != nil {
-		context.Status(http.StatusInternalServerError)
+		context.JSON(http.StatusInternalServerError, "internal error")
+		context.Error(err)
 		return
 	}
-	dt, err := hdl.tasksdb.DeleteTask(taskID, userID)
+	t, err := hdl.tasksdb.DeleteTask(taskID, userID)
 	if errors.Is(err, sql.ErrNoRows) {
-		context.String(http.StatusNotFound, "Not found")
+		context.JSON(http.StatusNotFound, "Not found")
+		context.Error(err)
 		return
 	}
 	if err != nil {
-		context.String(http.StatusInternalServerError, err.Error())
+		context.JSON(http.StatusInternalServerError, err.Error())
+		context.Error(err)
 		return
 	}
-	context.String(http.StatusOK, hdl.tasksdb.GetTaskInfo(dt))
+	context.JSON(http.StatusOK, gin.H{"deleted_task": t})
 }
 
 func (hdl *Handler) UpdateTask(context *gin.Context) {
 	taskID, err := getTaskID(context)
 	if err != nil {
-		context.String(http.StatusBadRequest, err.Error())
+		context.JSON(http.StatusBadRequest, err.Error())
+		context.Error(err)
 		return
 	}
 
-	t := models.TaskUpdateInput{}
-	err = context.ShouldBindJSON(&t)
+	tu := models.TaskUpdateInput{}
+	err = context.ShouldBindJSON(&tu)
 	if err != nil {
-		context.Status(http.StatusBadRequest)
+		context.JSON(http.StatusBadRequest, "form is incorrect")
+		context.Error(err)
 		return
 	}
 	userID, err := getUserID(context)
 	if err != nil {
-		context.Status(http.StatusInternalServerError)
+		context.JSON(http.StatusInternalServerError, "internal error")
+		context.Error(err)
 		return
 	}
-	ut, err := hdl.tasksdb.UpdateTask(t, taskID, userID)
+	t, err := hdl.tasksdb.UpdateTask(tu, taskID, userID)
 	if errors.Is(err, sql.ErrNoRows) {
-		context.String(http.StatusNotFound, "Not found")
+		context.JSON(http.StatusNotFound, "Not found")
+		context.Error(err)
 		return
 	}
 	if err != nil {
-		context.Status(http.StatusInternalServerError)
+		context.JSON(http.StatusInternalServerError, "internal error")
+		context.Error(err)
 		return
 	}
-	context.String(http.StatusOK, hdl.tasksdb.GetTaskInfo(ut))
+	context.JSON(http.StatusOK, gin.H{"updated_task": t})
 }
 
 func (hdl *Handler) CreateTask(context *gin.Context) {
 	tc := models.TaskCreateInput{}
 	err := context.ShouldBindJSON(&tc)
 	if err != nil {
-		context.Status(http.StatusBadRequest)
+		context.JSON(http.StatusBadRequest, "form is incorrect")
+		context.Error(err)
 		return
 	}
 
 	userID, err := getUserID(context)
 	if err != nil {
-		fmt.Println(1, err)
-		context.Status(http.StatusInternalServerError)
+		context.JSON(http.StatusInternalServerError, "internal error")
+		context.Error(err)
 		return
 	}
 
-	ct, err := hdl.tasksdb.CreateTask(tc, userID)
+	t, err := hdl.tasksdb.CreateTask(tc, userID)
 	if err != nil {
-		fmt.Println(2, err)
-		context.Status(http.StatusInternalServerError)
+		context.JSON(http.StatusInternalServerError, "internal error")
+		context.Error(err)
 		return
 	}
-	context.String(http.StatusOK, hdl.tasksdb.GetTaskInfo(ct))
+	context.JSON(http.StatusOK, gin.H{"created_task": t})
 }

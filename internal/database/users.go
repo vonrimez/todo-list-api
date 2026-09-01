@@ -23,7 +23,7 @@ func (udb *UsersDB) execWithError(query string, args ...any) (*models.User, erro
 	row := udb.db.QueryRow(query, args...)
 	u := models.User{}
 	err := row.Scan(
-		&u.ID, &u.Name, &u.Email, &u.Pass,
+		&u.ID, &u.Name,
 	)
 	if err != nil {
 		return nil, err
@@ -31,15 +31,11 @@ func (udb *UsersDB) execWithError(query string, args ...any) (*models.User, erro
 	return &u, nil
 }
 
-func (udb *UsersDB) GetUserInfo(u *models.User) string {
-	return fmt.Sprintf("[ID:%d]=%s:%s_%s\n", u.ID, u.Email, u.Name, u.Pass)
-}
-
 func (udb *UsersDB) CreateUser(ur models.UserRegisterInput) (*models.User, error) {
 	query := `
 	INSERT INTO users (name, email, password) 
 	VALUES ($1, $2, $3) 
-	RETURNING *;
+	RETURNING id, name;
 	`
 
 	encryptedPass, err := auth.HashPassword(ur.Pass)
@@ -48,6 +44,30 @@ func (udb *UsersDB) CreateUser(ur models.UserRegisterInput) (*models.User, error
 	}
 
 	return udb.execWithError(query, ur.Name, ur.Email, encryptedPass)
+}
+
+func (udb *UsersDB) LoginUser(ul models.UserLoginInput, secret string) (*models.User, error) {
+	query := `
+	SELECT id, name, email, password 
+	FROM users 
+	WHERE email = $1;
+	`
+	row := udb.db.QueryRow(query, ul.Email)
+
+	fetchedUser := models.UserLoginInput{}
+	err := row.Scan(&fetchedUser.ID, &fetchedUser.Name, &fetchedUser.Email, &fetchedUser.Pass)
+	if err != nil {
+		return nil, fmt.Errorf("Email or password is invalid")
+	}
+
+	if !auth.IsCorrectPassword(ul.Pass, fetchedUser.Pass) {
+		return nil, fmt.Errorf("Email or password is invalid")
+	}
+
+	return &models.User{
+		ID:   fetchedUser.ID,
+		Name: fetchedUser.Name,
+	}, nil
 }
 
 func (udb *UsersDB) GetJWT(userID int, secret string) (string, error) {
@@ -66,24 +86,4 @@ func (udb *UsersDB) GetJWT(userID int, secret string) (string, error) {
 	)
 
 	return token.SignedString([]byte(secret))
-}
-
-func (udb *UsersDB) LoginUser(ul models.UserLoginInput, secret string) (string, error) {
-	query := `
-	SELECT * FROM users 
-	WHERE email = $1;
-	`
-	row := udb.db.QueryRow(query, ul.Email)
-
-	fetchedUser := models.UserLoginInput{}
-	err := row.Scan(&fetchedUser.ID, &fetchedUser.Name, &fetchedUser.Email, &fetchedUser.Pass)
-	if err != nil {
-		return "", fmt.Errorf("Email is invalid")
-	}
-
-	if !auth.IsCorrectPassword(ul.Pass, fetchedUser.Pass) {
-		return "", fmt.Errorf("Password is incorrect")
-	}
-
-	return udb.GetJWT(fetchedUser.ID, secret)
 }

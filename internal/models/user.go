@@ -1,10 +1,8 @@
 package models
 
 type User struct {
-	ID    int
-	Name  string
-	Email string
-	Pass  string
+	ID   int
+	Name string
 }
 
 type UserRegisterInput struct {
