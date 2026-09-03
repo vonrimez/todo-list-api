@@ -22,7 +22,7 @@ func GetNewHandler(task *service.TaskService, user *service.UserService) *Handle
 	}
 }
 
-func getUserID(context *gin.Context) (int, *domain.AppError) {
+func getUserID(context *gin.Context) (int, error) {
 	rawID, exists := context.Get("ID")
 	if !exists {
 		return 0, domain.NewBadRequestError("cannot get param for key \"ID\"")
@@ -34,13 +34,24 @@ func getUserID(context *gin.Context) (int, *domain.AppError) {
 	return id, nil
 }
 
-func getTaskID(context *gin.Context) (int, *domain.AppError) {
+func getTaskID(context *gin.Context) (int, error) {
 	rawID := context.Param("id")
 	id, err := strconv.Atoi(rawID)
 	if err != nil {
 		return 0, domain.NewBadRequestError("ID must be an integer")
 	}
 	return id, nil
+}
+
+func respondWithError(context *gin.Context, err error) {
+	var appErr *domain.AppError
+	if errors.As(err, &appErr) {
+		context.JSON(appErr.Code, appErr.Message)
+		context.Error(appErr.Err)
+		return
+	}
+	context.JSON(http.StatusInternalServerError, "internal error")
+	context.Error(err)
 }
 
 func (hdl *Handler) UserLogin(context *gin.Context) {
@@ -54,14 +65,7 @@ func (hdl *Handler) UserLogin(context *gin.Context) {
 
 	outputUser, err := hdl.userService.Login(inputUser)
 	if err != nil {
-		var appErr *domain.AppError
-		if errors.As(err, &appErr) {
-			context.JSON(appErr.Code, appErr.Message)
-			context.Error(appErr.Err)
-			return
-		}
-		context.JSON(http.StatusInternalServerError, "internal error")
-		context.Error(err)
+		respondWithError(context, err)
 		return
 	}
 
@@ -83,14 +87,7 @@ func (hdl *Handler) UserRegister(context *gin.Context) {
 
 	outputUser, err := hdl.userService.Register(inputUser)
 	if err != nil {
-		var appErr *domain.AppError
-		if errors.As(err, &appErr) {
-			context.JSON(appErr.Code, appErr.Message)
-			context.Error(appErr.Err)
-			return
-		}
-		context.JSON(http.StatusInternalServerError, "internal error")
-		context.Error(err)
+		respondWithError(context, err)
 		return
 	}
 
@@ -102,90 +99,79 @@ func (hdl *Handler) UserRegister(context *gin.Context) {
 }
 
 func (hdl *Handler) GetTasks(context *gin.Context) {
-	userID, appErr := getUserID(context)
-	if appErr.Err != nil {
-		context.JSON(appErr.Code, appErr.Message)
-		context.Error(appErr.Err)
+	userID, err := getUserID(context)
+	if err != nil {
+		respondWithError(context, err)
 		return
 	}
-	outputTasks, appErr := hdl.taskService.GetAll(userID)
-	if appErr.Err != nil {
-		context.JSON(appErr.Code, appErr.Message)
-		context.Error(appErr.Err)
+	outputTasks, err := hdl.taskService.GetAll(userID)
+	if err != nil {
+		respondWithError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, outputTasks)
 }
 
 func (hdl *Handler) GetTaskById(context *gin.Context) {
-	taskID, appErr := getTaskID(context)
-	if appErr.Err != nil {
-		context.JSON(appErr.Code, appErr.Message)
-		context.Error(appErr.Err)
+	taskID, err := getTaskID(context)
+	if err != nil {
+		respondWithError(context, err)
 		return
 	}
-	userID, appErr := getUserID(context)
-	if appErr.Err != nil {
-		context.JSON(appErr.Code, appErr.Message)
-		context.Error(appErr.Err)
+	userID, err := getUserID(context)
+	if err != nil {
+		respondWithError(context, err)
 		return
 	}
-	outputTask, appErr := hdl.taskService.GetById(taskID, userID)
-	if appErr.Err != nil {
-		context.JSON(appErr.Code, appErr.Message)
-		context.Error(appErr.Err)
+	outputTask, err := hdl.taskService.GetById(taskID, userID)
+	if err != nil {
+		respondWithError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, outputTask)
 }
 
 func (hdl *Handler) DeleteTask(context *gin.Context) {
-	taskID, appErr := getTaskID(context)
-	if appErr.Err != nil {
-		context.JSON(appErr.Code, appErr.Message)
-		context.Error(appErr.Err)
+	taskID, err := getTaskID(context)
+	if err != nil {
+		respondWithError(context, err)
 		return
 	}
-	userID, appErr := getUserID(context)
-	if appErr.Err != nil {
-		context.JSON(appErr.Code, appErr.Message)
-		context.Error(appErr.Err)
+	userID, err := getUserID(context)
+	if err != nil {
+		respondWithError(context, err)
 		return
 	}
-	outputTask, appErr := hdl.taskService.Delete(taskID, userID)
-	if appErr.Err != nil {
-		context.JSON(appErr.Code, appErr.Message)
-		context.Error(appErr.Err)
+	outputTask, err := hdl.taskService.Delete(taskID, userID)
+	if err != nil {
+		respondWithError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"deleted_task": outputTask})
 }
 
 func (hdl *Handler) UpdateTask(context *gin.Context) {
-	taskID, appErr := getTaskID(context)
-	if appErr.Err != nil {
-		context.JSON(appErr.Code, appErr.Message)
-		context.Error(appErr.Err)
+	taskID, err := getTaskID(context)
+	if err != nil {
+		respondWithError(context, err)
 		return
 	}
 
 	inputTask := models.TaskUpdateInput{}
-	err := context.ShouldBindJSON(&inputTask)
+	err = context.ShouldBindJSON(&inputTask)
 	if err != nil {
 		context.JSON(http.StatusBadRequest, "form is incorrect")
 		context.Error(err)
 		return
 	}
-	userID, appErr := getUserID(context)
-	if appErr.Err != nil {
-		context.JSON(appErr.Code, appErr.Message)
-		context.Error(appErr.Err)
+	userID, err := getUserID(context)
+	if err != nil {
+		respondWithError(context, err)
 		return
 	}
-	outputTask, appErr := hdl.taskService.Update(inputTask, taskID, userID)
-	if appErr.Err != nil {
-		context.JSON(appErr.Code, appErr.Message)
-		context.Error(appErr.Err)
+	outputTask, err := hdl.taskService.Update(inputTask, taskID, userID)
+	if err != nil {
+		respondWithError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"updated_task": outputTask})
@@ -200,17 +186,15 @@ func (hdl *Handler) CreateTask(context *gin.Context) {
 		return
 	}
 
-	userID, appErr := getUserID(context)
-	if appErr.Err != nil {
-		context.JSON(appErr.Code, appErr.Message)
-		context.Error(appErr.Err)
+	userID, err := getUserID(context)
+	if err != nil {
+		respondWithError(context, err)
 		return
 	}
 
-	outputTask, appErr := hdl.taskService.Create(inputTask, userID)
-	if appErr.Err != nil {
-		context.JSON(appErr.Code, appErr.Message)
-		context.Error(appErr.Err)
+	outputTask, err := hdl.taskService.Create(inputTask, userID)
+	if err != nil {
+		respondWithError(context, err)
 		return
 	}
 	context.JSON(http.StatusOK, gin.H{"created_task": outputTask})

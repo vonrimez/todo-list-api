@@ -7,8 +7,8 @@ import (
 )
 
 type UserRepository interface {
-	CreateUser(models.UserRegisterInput) (*models.UserOutput, *domain.AppError)
-	LoginUser(models.UserLoginInput) (*models.UserOutput, *domain.AppError)
+	CreateUser(models.UserRegisterInput) (*models.UserOutput, error)
+	LoginUser(models.UserLoginInput) (*models.UserOutput, error)
 }
 
 type UserService struct {
@@ -20,7 +20,7 @@ func NewUserService(repo UserRepository, jwtSecret string) *UserService {
 	return &UserService{repo: repo, JWTSecret: jwtSecret}
 }
 
-func (s *UserService) Register(inputUser models.UserRegisterInput) (*models.User, *domain.AppError) {
+func (s *UserService) Register(inputUser models.UserRegisterInput) (*models.User, error) {
 	encryptedPass, err := auth.HashPassword(*inputUser.Pass)
 	if err != nil {
 		return nil, domain.NewInternalError(err)
@@ -44,7 +44,7 @@ func (s *UserService) Register(inputUser models.UserRegisterInput) (*models.User
 	}, nil
 }
 
-func (s *UserService) Login(inputUser models.UserLoginInput) (*models.User, *domain.AppError) {
+func (s *UserService) Login(inputUser models.UserLoginInput) (*models.User, error) {
 	outputUser, appErr := s.repo.LoginUser(inputUser)
 	if appErr != nil {
 		return nil, appErr

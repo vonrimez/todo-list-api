@@ -17,7 +17,7 @@ func GetNewTasksDB(db *sql.DB) *TasksDB {
 }
 
 // need return values: id, title, description, status, created_at, updated_at
-func (tdb *TasksDB) execWithError(query string, args ...any) (*models.Task, *domain.AppError) {
+func (tdb *TasksDB) execWithError(query string, args ...any) (*models.Task, error) {
 	row := tdb.db.QueryRow(query, args...)
 	outputTask := models.Task{}
 	err := row.Scan(
@@ -32,7 +32,7 @@ func (tdb *TasksDB) execWithError(query string, args ...any) (*models.Task, *dom
 	return &outputTask, nil
 }
 
-func (tdb *TasksDB) GetTasks(userID int) ([]models.Task, *domain.AppError) {
+func (tdb *TasksDB) GetTasks(userID int) ([]models.Task, error) {
 	query := `
 	SELECT id, title, description, status, TO_CHAR(created_at, 'DD.MM.YYY HH24:MI:SS'), TO_CHAR(updated_at, 'DD.MM.YYY HH24:MI:SS') 
 	FROM tasks
@@ -64,7 +64,7 @@ func (tdb *TasksDB) GetTasks(userID int) ([]models.Task, *domain.AppError) {
 	return tasks, nil
 }
 
-func (tdb *TasksDB) GetTaskById(taskID int, userID int) (*models.Task, *domain.AppError) {
+func (tdb *TasksDB) GetTaskById(taskID int, userID int) (*models.Task, error) {
 	query := `
 	SELECT id, title, description, status, TO_CHAR(created_at, 'DD.MM.YYY HH24:MI:SS'), TO_CHAR(updated_at, 'DD.MM.YYY HH24:MI:SS') 
 	FROM tasks 
@@ -91,7 +91,7 @@ func (tdb *TasksDB) GetTaskById(taskID int, userID int) (*models.Task, *domain.A
 	return &outputTask, nil
 }
 
-func (tdb *TasksDB) CreateTask(inputTask models.TaskCreateInput, userID int) (*models.Task, *domain.AppError) {
+func (tdb *TasksDB) CreateTask(inputTask models.TaskCreateInput, userID int) (*models.Task, error) {
 	query := `
 	INSERT INTO tasks (title, description, status, user_id) 
 	VALUES (
@@ -106,7 +106,7 @@ func (tdb *TasksDB) CreateTask(inputTask models.TaskCreateInput, userID int) (*m
 	return tdb.execWithError(query, inputTask.Title, inputTask.Description, inputTask.Status, userID)
 }
 
-func (tdb *TasksDB) UpdateTask(inputTask models.TaskUpdateInput, taskID int, userID int) (*models.Task, *domain.AppError) {
+func (tdb *TasksDB) UpdateTask(inputTask models.TaskUpdateInput, taskID int, userID int) (*models.Task, error) {
 	query := `
 	UPDATE tasks 
 	SET 
@@ -121,7 +121,7 @@ func (tdb *TasksDB) UpdateTask(inputTask models.TaskUpdateInput, taskID int, use
 	return tdb.execWithError(query, inputTask.Title, inputTask.Description, inputTask.Status, taskID, userID)
 }
 
-func (tdb *TasksDB) DeleteTask(taskID int, userID int) (*models.Task, *domain.AppError) {
+func (tdb *TasksDB) DeleteTask(taskID int, userID int) (*models.Task, error) {
 	query := `
 	DELETE FROM tasks 
 	WHERE id = $1 AND user_id = $2 

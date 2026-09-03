@@ -17,7 +17,7 @@ func GetNewUserDB(db *sql.DB) *UsersDB {
 }
 
 // required return values: id, name, pass
-func (udb *UsersDB) execWithError(query string, args ...any) (*models.UserOutput, *domain.AppError) {
+func (udb *UsersDB) execWithError(query string, args ...any) (*models.UserOutput, error) {
 	row := udb.db.QueryRow(query, args...)
 	outputUser := models.UserOutput{}
 	err := row.Scan(
@@ -32,7 +32,7 @@ func (udb *UsersDB) execWithError(query string, args ...any) (*models.UserOutput
 	return &outputUser, nil
 }
 
-func (udb *UsersDB) CreateUser(inputUser models.UserRegisterInput) (*models.UserOutput, *domain.AppError) {
+func (udb *UsersDB) CreateUser(inputUser models.UserRegisterInput) (*models.UserOutput, error) {
 	query := `
 	INSERT INTO users (name, email, password) 
 	VALUES ($1, $2, $3) 
@@ -42,7 +42,7 @@ func (udb *UsersDB) CreateUser(inputUser models.UserRegisterInput) (*models.User
 	return udb.execWithError(query, inputUser.Name, inputUser.Email, inputUser.Pass)
 }
 
-func (udb *UsersDB) LoginUser(inputUser models.UserLoginInput) (*models.UserOutput, *domain.AppError) {
+func (udb *UsersDB) LoginUser(inputUser models.UserLoginInput) (*models.UserOutput, error) {
 	query := `
 	SELECT id, name, email, password 
 	FROM users 

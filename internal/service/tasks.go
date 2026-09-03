@@ -6,11 +6,11 @@ import (
 )
 
 type TaskRepository interface {
-	GetTasks(int) ([]models.Task, *domain.AppError)
-	GetTaskById(int, int) (*models.Task, *domain.AppError)
-	CreateTask(models.TaskCreateInput, int) (*models.Task, *domain.AppError)
-	UpdateTask(models.TaskUpdateInput, int, int) (*models.Task, *domain.AppError)
-	DeleteTask(int, int) (*models.Task, *domain.AppError)
+	GetTasks(int) ([]models.Task, error)
+	GetTaskById(int, int) (*models.Task, error)
+	CreateTask(models.TaskCreateInput, int) (*models.Task, error)
+	UpdateTask(models.TaskUpdateInput, int, int) (*models.Task, error)
+	DeleteTask(int, int) (*models.Task, error)
 }
 
 type TaskService struct {
@@ -40,7 +40,7 @@ func isValidStatus(status string) bool {
 	return false
 }
 
-func (s *TaskService) GetAll(userID int) ([]models.Task, *domain.AppError) {
+func (s *TaskService) GetAll(userID int) ([]models.Task, error) {
 	if isNegative(userID) {
 		return nil, domain.NewBadRequestError("the user id must be positive")
 	}
@@ -51,7 +51,7 @@ func (s *TaskService) GetAll(userID int) ([]models.Task, *domain.AppError) {
 	return outputTasks, nil
 }
 
-func (s *TaskService) GetById(taskID int, userID int) (*models.Task, *domain.AppError) {
+func (s *TaskService) GetById(taskID int, userID int) (*models.Task, error) {
 	if isNegative(userID) {
 		return nil, domain.NewBadRequestError("the user id must be positive")
 	}
@@ -65,7 +65,7 @@ func (s *TaskService) GetById(taskID int, userID int) (*models.Task, *domain.App
 	return outputTask, nil
 }
 
-func (s *TaskService) Create(inputTask models.TaskCreateInput, userID int) (*models.Task, *domain.AppError) {
+func (s *TaskService) Create(inputTask models.TaskCreateInput, userID int) (*models.Task, error) {
 	if isNegative(userID) {
 		return nil, domain.NewBadRequestError("the user id must be positive")
 	}
@@ -82,7 +82,7 @@ func (s *TaskService) Create(inputTask models.TaskCreateInput, userID int) (*mod
 	return outputTask, nil
 }
 
-func (s *TaskService) Update(inputTask models.TaskUpdateInput, taskID int, userID int) (*models.Task, *domain.AppError) {
+func (s *TaskService) Update(inputTask models.TaskUpdateInput, taskID int, userID int) (*models.Task, error) {
 	if isNegative(userID) {
 		return nil, domain.NewBadRequestError("the user id must be positive")
 	}
@@ -104,7 +104,7 @@ func (s *TaskService) Update(inputTask models.TaskUpdateInput, taskID int, userI
 	return outputTask, nil
 }
 
-func (s *TaskService) Delete(taskID int, userID int) (*models.Task, *domain.AppError) {
+func (s *TaskService) Delete(taskID int, userID int) (*models.Task, error) {
 	if isNegative(userID) {
 		return nil, domain.NewBadRequestError("the user id must be positive")
 	}
