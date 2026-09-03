@@ -2,7 +2,9 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 
+	"github.com/vonrimez/TaskAPI/domain"
 	"github.com/vonrimez/TaskAPI/internal/models"
 )
 
@@ -15,19 +17,22 @@ func GetNewTasksDB(db *sql.DB) *TasksDB {
 }
 
 // need return values: id, title, description, status, created_at, updated_at
-func (tdb *TasksDB) execWithError(query string, args ...any) (*models.Task, error) {
+func (tdb *TasksDB) execWithError(query string, args ...any) (*models.Task, *domain.AppError) {
 	row := tdb.db.QueryRow(query, args...)
-	t := models.Task{}
+	outputTask := models.Task{}
 	err := row.Scan(
-		&t.ID, &t.Title, &t.Description, &t.Status, &t.Created_at, &t.Updated_at,
+		&outputTask.ID, &outputTask.Title, &outputTask.Description, &outputTask.Status, &outputTask.Created_at, &outputTask.Updated_at,
 	)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.NewNotFoundError("there are no matches")
+		}
+		return nil, domain.NewInternalError(err)
 	}
-	return &t, nil
+	return &outputTask, nil
 }
 
-func (tdb *TasksDB) GetTasks(userID int) ([]models.TaskGetOutput, error) {
+func (tdb *TasksDB) GetTasks(userID int) ([]models.Task, *domain.AppError) {
 	query := `
 	SELECT id, title, description, status, TO_CHAR(created_at, 'DD.MM.YYY HH24:MI:SS'), TO_CHAR(updated_at, 'DD.MM.YYY HH24:MI:SS') 
 	FROM tasks
@@ -35,31 +40,31 @@ func (tdb *TasksDB) GetTasks(userID int) ([]models.TaskGetOutput, error) {
 	`
 	rows, err := tdb.db.Query(query, userID)
 	if err != nil {
-		return nil, err
+		return nil, domain.NewInternalError(err)
 	}
 	defer rows.Close()
 
-	tasks := []models.TaskGetOutput{}
+	tasks := make([]models.Task, 0, 8)
 
 	for rows.Next() {
-		t := models.TaskGetOutput{}
+		t := models.Task{}
 
 		err := rows.Scan(
 			&t.ID, &t.Title, &t.Description, &t.Status, &t.Created_at, &t.Updated_at,
 		)
 		if err != nil {
-			return nil, err
+			return nil, domain.NewInternalError(err)
 		}
 		tasks = append(tasks, t)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, domain.NewInternalError(err)
 	}
 
 	return tasks, nil
 }
 
-func (tdb *TasksDB) GetTaskById(taskID int, userID int) (models.TaskGetOutput, error) {
+func (tdb *TasksDB) GetTaskById(taskID int, userID int) (*models.Task, *domain.AppError) {
 	query := `
 	SELECT id, title, description, status, TO_CHAR(created_at, 'DD.MM.YYY HH24:MI:SS'), TO_CHAR(updated_at, 'DD.MM.YYY HH24:MI:SS') 
 	FROM tasks 
@@ -68,22 +73,25 @@ func (tdb *TasksDB) GetTaskById(taskID int, userID int) (models.TaskGetOutput, e
 	`
 	row := tdb.db.QueryRow(query, taskID, userID)
 	if err := row.Err(); err != nil {
-		return models.TaskGetOutput{}, err
+		return nil, domain.NewInternalError(err)
 	}
 
-	t := models.TaskGetOutput{}
+	outputTask := models.Task{}
 
 	err := row.Scan(
-		&t.ID, &t.Title, &t.Description, &t.Status, &t.Created_at, &t.Updated_at,
+		&outputTask.ID, &outputTask.Title, &outputTask.Description, &outputTask.Status, &outputTask.Created_at, &outputTask.Updated_at,
 	)
 	if err != nil {
-		return models.TaskGetOutput{}, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.NewNotFoundError("there are no matches")
+		}
+		return nil, domain.NewInternalError(err)
 	}
 
-	return t, nil
+	return &outputTask, nil
 }
 
-func (tdb *TasksDB) CreateTask(task models.TaskCreateInput, userID int) (*models.Task, error) {
+func (tdb *TasksDB) CreateTask(inputTask models.TaskCreateInput, userID int) (*models.Task, *domain.AppError) {
 	query := `
 	INSERT INTO tasks (title, description, status, user_id) 
 	VALUES (
@@ -95,10 +103,10 @@ func (tdb *TasksDB) CreateTask(task models.TaskCreateInput, userID int) (*models
 	RETURNING id, title, description, status, created_at, updated_at;
 	`
 
-	return tdb.execWithError(query, task.Title, task.Description, task.Status, userID)
+	return tdb.execWithError(query, inputTask.Title, inputTask.Description, inputTask.Status, userID)
 }
 
-func (tdb *TasksDB) UpdateTask(task models.TaskUpdateInput, taskID int, userID int) (*models.Task, error) {
+func (tdb *TasksDB) UpdateTask(inputTask models.TaskUpdateInput, taskID int, userID int) (*models.Task, *domain.AppError) {
 	query := `
 	UPDATE tasks 
 	SET 
@@ -110,10 +118,10 @@ func (tdb *TasksDB) UpdateTask(task models.TaskUpdateInput, taskID int, userID i
 	RETURNING id, title, description, status, created_at, updated_at;
 	`
 
-	return tdb.execWithError(query, task.Title, task.Description, task.Status, taskID, userID)
+	return tdb.execWithError(query, inputTask.Title, inputTask.Description, inputTask.Status, taskID, userID)
 }
 
-func (tdb *TasksDB) DeleteTask(taskID int, userID int) (*models.Task, error) {
+func (tdb *TasksDB) DeleteTask(taskID int, userID int) (*models.Task, *domain.AppError) {
 	query := `
 	DELETE FROM tasks 
 	WHERE id = $1 AND user_id = $2 

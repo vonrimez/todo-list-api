@@ -3,15 +3,6 @@ package models
 import "time"
 
 type Task struct {
-	ID          int
-	Title       string
-	Description string
-	Status      string
-	Created_at  time.Time
-	Updated_at  time.Time
-}
-
-type TaskGetOutput struct {
 	ID          int       `json:"id"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
@@ -21,13 +12,13 @@ type TaskGetOutput struct {
 }
 
 type TaskCreateInput struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Status      string `json:"status,omitempty"`
+	Title       *string `json:"title" binding:"required"`
+	Description *string `json:"description" binding:"required"`
+	Status      *string `json:"status"`
 }
 
 type TaskUpdateInput struct {
-	Title       string `json:"title,omitempty"`
-	Description string `json:"description,omitempty"`
-	Status      string `json:"status,omitempty"`
+	Title       *string `json:"title"`
+	Description *string `json:"description"`
+	Status      *string `json:"status"`
 }

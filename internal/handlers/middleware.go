@@ -6,32 +6,29 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/vonrimez/TaskAPI/internal/auth"
 )
 
 func (hdl *Handler) JWTAuth(context *gin.Context) {
 	authHeader := context.GetHeader("Authorization")
 	if authHeader == "" {
-		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "no token"})
+		context.AbortWithStatusJSON(http.StatusUnauthorized, "no token")
 		return
 	}
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-	type Claims struct {
-		UserID int
-		jwt.RegisteredClaims
-	}
-
-	claims := Claims{}
-	token, err := jwt.ParseWithClaims(tokenString, &claims, func(t *jwt.Token) (interface{}, error) {
-		return []byte(hdl.cfg.JWT_SECRET), nil
-	})
-
-	if err != nil || !token.Valid {
-		context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+	claims, err := auth.IsValidJWT(tokenString, hdl.userService.JWTSecret)
+	if err != nil {
+		context.AbortWithStatusJSON(http.StatusInternalServerError, "internal error")
 		return
+	} else {
+		if claims == nil {
+			context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			return
+		}
 	}
+
 	context.Set("ID", claims.UserID)
 }
 

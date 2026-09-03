@@ -4,9 +4,10 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vonrimez/TaskAPI/internal/config"
+	"github.com/vonrimez/TaskAPI/config"
 	"github.com/vonrimez/TaskAPI/internal/database"
 	"github.com/vonrimez/TaskAPI/internal/handlers"
+	"github.com/vonrimez/TaskAPI/internal/service"
 )
 
 func main() {
@@ -24,11 +25,14 @@ func main() {
 
 	fmt.Println("Server successfully connected with database")
 
-	tasksdb := database.GetNewTasksDB(db)
-	usersdb := database.GetNewUserDB(db)
+	taskRepo := database.GetNewTasksDB(db)
+	userRepo := database.GetNewUserDB(db)
+
+	taskService := service.NewTaskService(taskRepo)
+	userService := service.NewUserService(userRepo, cfg.JWT_SECRET)
 
 	hdl := handlers.GetNewHandler(
-		tasksdb, usersdb, cfg,
+		taskService, userService,
 	)
 
 	taskApi := gin.Default()
@@ -41,7 +45,7 @@ func main() {
 			user.POST("/login", hdl.UserLogin)
 			user.POST("/register", hdl.UserRegister)
 		}
-		tasks := v1.Group("/tasks")
+		tasks := v1.Group("/task")
 		tasks.Use(hdl.JWTAuth)
 		{
 			tasks.GET("/list", hdl.GetTasks)
