@@ -7,16 +7,16 @@ import (
 )
 
 type Config struct {
-	DB_URL     string
-	PORT       string
-	JWT_SECRET string
+	DBURL     string
+	PORT      string
+	JWTSecret string
 }
 
 func LoadConfig() *Config {
 	godotenv.Load()
 	return &Config{
-		DB_URL:     os.Getenv("DB_URL"),
-		PORT:       os.Getenv("PORT"),
-		JWT_SECRET: os.Getenv("JWT_SECRET"),
+		DBURL:     os.Getenv("DB_URL"),
+		PORT:      os.Getenv("PORT"),
+		JWTSecret: os.Getenv("JWT_SECRET"),
 	}
 }

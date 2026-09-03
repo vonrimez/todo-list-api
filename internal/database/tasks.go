@@ -21,7 +21,7 @@ func (tdb *TasksDB) execWithError(query string, args ...any) (*models.Task, erro
 	row := tdb.db.QueryRow(query, args...)
 	outputTask := models.Task{}
 	err := row.Scan(
-		&outputTask.ID, &outputTask.Title, &outputTask.Description, &outputTask.Status, &outputTask.Created_at, &outputTask.Updated_at,
+		&outputTask.ID, &outputTask.Title, &outputTask.Description, &outputTask.Status, &outputTask.CreatedAt, &outputTask.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -34,7 +34,7 @@ func (tdb *TasksDB) execWithError(query string, args ...any) (*models.Task, erro
 
 func (tdb *TasksDB) GetTasks(userID int) ([]models.Task, error) {
 	query := `
-	SELECT id, title, description, status, TO_CHAR(created_at, 'DD.MM.YYY HH24:MI:SS'), TO_CHAR(updated_at, 'DD.MM.YYY HH24:MI:SS') 
+	SELECT id, title, description, status, created_at, updated_at 
 	FROM tasks
 	WHERE user_id = $1;
 	`
@@ -50,7 +50,7 @@ func (tdb *TasksDB) GetTasks(userID int) ([]models.Task, error) {
 		t := models.Task{}
 
 		err := rows.Scan(
-			&t.ID, &t.Title, &t.Description, &t.Status, &t.Created_at, &t.Updated_at,
+			&t.ID, &t.Title, &t.Description, &t.Status, &t.CreatedAt, &t.UpdatedAt,
 		)
 		if err != nil {
 			return nil, domain.NewInternalError(err)
@@ -66,7 +66,7 @@ func (tdb *TasksDB) GetTasks(userID int) ([]models.Task, error) {
 
 func (tdb *TasksDB) GetTaskById(taskID int, userID int) (*models.Task, error) {
 	query := `
-	SELECT id, title, description, status, TO_CHAR(created_at, 'DD.MM.YYY HH24:MI:SS'), TO_CHAR(updated_at, 'DD.MM.YYY HH24:MI:SS') 
+	SELECT id, title, description, status, created_at, updated_at 
 	FROM tasks 
 	WHERE id = $1
 	AND user_id = $2;
@@ -79,7 +79,7 @@ func (tdb *TasksDB) GetTaskById(taskID int, userID int) (*models.Task, error) {
 	outputTask := models.Task{}
 
 	err := row.Scan(
-		&outputTask.ID, &outputTask.Title, &outputTask.Description, &outputTask.Status, &outputTask.Created_at, &outputTask.Updated_at,
+		&outputTask.ID, &outputTask.Title, &outputTask.Description, &outputTask.Status, &outputTask.CreatedAt, &outputTask.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

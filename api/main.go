@@ -17,7 +17,7 @@ func main() {
 	fmt.Println("Starting server")
 	fmt.Println("Connecting with database...")
 
-	db, err := database.EstablishConnection("pgx", cfg.DB_URL)
+	db, err := database.EstablishConnection("pgx", cfg.DBURL)
 	if err != nil {
 		panic(err)
 	}
@@ -29,7 +29,7 @@ func main() {
 	userRepo := database.GetNewUserDB(db)
 
 	taskService := service.NewTaskService(taskRepo)
-	userService := service.NewUserService(userRepo, cfg.JWT_SECRET)
+	userService := service.NewUserService(userRepo, cfg.JWTSecret)
 
 	hdl := handlers.GetNewHandler(
 		taskService, userService,

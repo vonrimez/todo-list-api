@@ -1,6 +1,9 @@
 package domain
 
-import "net/http"
+import (
+	"errors"
+	"net/http"
+)
 
 type AppError struct {
 	Code    int    `json:"-"`
@@ -13,11 +16,19 @@ func (e *AppError) Error() string {
 }
 
 func NewNotFoundError(msg string) *AppError {
-	return &AppError{Code: http.StatusNotFound, Message: msg}
+	return &AppError{
+		Code:    http.StatusNotFound,
+		Message: msg,
+		Err:     errors.New(msg),
+	}
 }
 
 func NewBadRequestError(msg string) *AppError {
-	return &AppError{Code: http.StatusBadRequest, Message: msg}
+	return &AppError{
+		Code:    http.StatusBadRequest,
+		Message: msg,
+		Err:     errors.New(msg),
+	}
 }
 
 func NewInternalError(err error) *AppError {

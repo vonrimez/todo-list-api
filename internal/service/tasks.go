@@ -22,22 +22,22 @@ func NewTaskService(repo TaskRepository) *TaskService {
 }
 
 func isNegative(a int) bool {
-	if a > 0 {
+	if a >= 0 {
 		return false
 	}
 	return true
 }
 
-func isValidStatus(status string) bool {
+func isNotValidStatus(status string) bool {
 	switch status {
 	case "todo":
 		fallthrough
 	case "in-progress":
 		fallthrough
 	case "done":
-		return true
+		return false
 	}
-	return false
+	return true
 }
 
 func (s *TaskService) GetAll(userID int) ([]models.Task, error) {
@@ -72,7 +72,7 @@ func (s *TaskService) Create(inputTask models.TaskCreateInput, userID int) (*mod
 	if len(*inputTask.Title) == 0 {
 		return nil, domain.NewBadRequestError("the title cannot be empty")
 	}
-	if inputTask.Status != nil && isValidStatus(*inputTask.Status) {
+	if inputTask.Status != nil && isNotValidStatus(*inputTask.Status) {
 		return nil, domain.NewBadRequestError("the status must be 'todo', 'in-progress' or 'done'")
 	}
 	outputTask, appErr := s.repo.CreateTask(inputTask, userID)
@@ -94,7 +94,7 @@ func (s *TaskService) Update(inputTask models.TaskUpdateInput, taskID int, userI
 		inputTask.Status == nil {
 		return nil, domain.NewBadRequestError("there's nothing to update.")
 	}
-	if inputTask.Status != nil && isValidStatus(*inputTask.Status) {
+	if inputTask.Status != nil && isNotValidStatus(*inputTask.Status) {
 		return nil, domain.NewBadRequestError("the status must be 'todo', 'in-progress' or 'done'")
 	}
 	outputTask, appErr := s.repo.UpdateTask(inputTask, taskID, userID)

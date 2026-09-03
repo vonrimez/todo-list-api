@@ -44,7 +44,7 @@ func (udb *UsersDB) CreateUser(inputUser models.UserRegisterInput) (*models.User
 
 func (udb *UsersDB) LoginUser(inputUser models.UserLoginInput) (*models.UserOutput, error) {
 	query := `
-	SELECT id, name, email, password 
+	SELECT id, name, password 
 	FROM users 
 	WHERE email = $1;
 	`

@@ -197,5 +197,5 @@ func (hdl *Handler) CreateTask(context *gin.Context) {
 		respondWithError(context, err)
 		return
 	}
-	context.JSON(http.StatusOK, gin.H{"created_task": outputTask})
+	context.JSON(http.StatusCreated, gin.H{"created_task": outputTask})
 }
