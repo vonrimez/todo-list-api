@@ -34,7 +34,7 @@ func getUserID(r *http.Request) (int, error) {
 	rawID := getValue(r, UserID)
 	id, isInt := rawID.(int)
 	if !isInt {
-		return 0, domain.NewBadRequestError("invalid parameter \"ID\"")
+		return 0, domain.NewBadRequestError("invalid parameter 'ID'")
 	}
 	return id, nil
 }

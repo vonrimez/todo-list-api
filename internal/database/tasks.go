@@ -93,12 +93,13 @@ func (tdb *TasksDB) GetTaskById(taskID int, userID int) (*models.Task, error) {
 
 func (tdb *TasksDB) CreateTask(inputTask models.TaskCreateInput, userID int) (*models.Task, error) {
 	query := `
-	INSERT INTO tasks (title, description, status, user_id) 
+	INSERT INTO tasks (title, description, status, user_id, id) 
 	VALUES (
 		$1, 
 		$2, 
 		COALESCE(NULLIF($3, '')::TASK_STATUS, 'todo'::TASK_STATUS),
-		$4
+		$4,
+		COALESCE((SELECT MAX(id) FROM tasks WHERE user_id = $4), 0) + 1 
 	) 
 	RETURNING id, title, description, status, created_at, updated_at;
 	`
@@ -112,8 +113,8 @@ func (tdb *TasksDB) UpdateTask(inputTask models.TaskUpdateInput, taskID int, use
 	SET 
 		title = COALESCE(NULLIF($1, ''), title), 
 		description = COALESCE(NULLIF($2, ''), description), 
-		status = COALESCE(NULLIF($3, '')::TASK_STATUS, status),
-		updated_at = NOW() 
+		status = COALESCE(NULLIF($3, '')::TASK_STATUS, status), 
+		updated_at = NOW()
 	WHERE id = $4 AND user_id = $5 
 	RETURNING id, title, description, status, created_at, updated_at;
 	`

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
@@ -38,5 +39,7 @@ func (hdl *Handler) JWTAuth(next http.Handler) http.Handler {
 		}
 
 		setValue(r, UserID, claims.UserID)
+		log.Println(r.Context().Value(UserID))
+		next.ServeHTTP(w, r)
 	})
 }

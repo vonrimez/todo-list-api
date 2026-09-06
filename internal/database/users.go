@@ -36,7 +36,7 @@ func (udb *UsersDB) CreateUser(inputUser models.UserRegisterInput) (*models.User
 	query := `
 	INSERT INTO users (name, email, password) 
 	VALUES ($1, $2, $3) 
-	RETURNING id, name, pass;
+	RETURNING id, name, password;
 	`
 
 	return udb.execWithError(query, inputUser.Name, inputUser.Email, inputUser.Pass)
