@@ -12,7 +12,7 @@ type UsersDB struct {
 	db *sql.DB
 }
 
-func GetNewUserDB(db *sql.DB) *UsersDB {
+func NewUserDB(db *sql.DB) *UsersDB {
 	return &UsersDB{db: db}
 }
 

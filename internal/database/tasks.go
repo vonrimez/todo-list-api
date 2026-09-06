@@ -12,7 +12,7 @@ type TasksDB struct {
 	db *sql.DB
 }
 
-func GetNewTasksDB(db *sql.DB) *TasksDB {
+func NewTaskDB(db *sql.DB) *TasksDB {
 	return &TasksDB{db: db}
 }
 

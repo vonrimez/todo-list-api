@@ -13,12 +13,12 @@ type UserOutput struct {
 }
 
 type UserRegisterInput struct {
-	Name  *string `json:"name" binding:"required"`
-	Email *string `json:"email" binding:"required"`
-	Pass  *string `json:"password" binding:"required"`
+	Name  *string `json:"name" validate:"required,min=2,max=50"`
+	Email *string `json:"email" validate:"required,email"`
+	Pass  *string `json:"password" validate:"required,min=8,max=255"`
 }
 
 type UserLoginInput struct {
-	Email *string `json:"email" binding:"required"`
-	Pass  *string `json:"password" binding:"required"`
+	Email *string `json:"email" validate:"required,email"`
+	Pass  *string `json:"password" validate:"required"`
 }
