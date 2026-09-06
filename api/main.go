@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 
-	"github.com/vonrimez/TaskAPI/config"
+	"github.com/vonrimez/TaskAPI/internal/common/config"
 	"github.com/vonrimez/TaskAPI/internal/database"
 	"github.com/vonrimez/TaskAPI/internal/handlers"
-	"github.com/vonrimez/TaskAPI/internal/server"
 	"github.com/vonrimez/TaskAPI/internal/service"
+	"github.com/vonrimez/TaskAPI/server"
 )
 
 func main() {

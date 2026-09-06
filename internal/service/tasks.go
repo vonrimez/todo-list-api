@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/vonrimez/TaskAPI/domain"
-	"github.com/vonrimez/TaskAPI/internal/models"
+	"github.com/vonrimez/TaskAPI/internal/common/domain"
+	"github.com/vonrimez/TaskAPI/internal/common/models"
 )
 
 type TaskRepository interface {

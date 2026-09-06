@@ -6,7 +6,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/vonrimez/TaskAPI/domain"
+	"github.com/vonrimez/TaskAPI/internal/common/domain"
 )
 
 // impements basic response structure
@@ -18,7 +18,7 @@ type Response struct {
 }
 
 func setValue(r *http.Request, key any, value any) {
-	r = r.WithContext(context.WithValue(r.Context(), key, value))
+	*r = *r.WithContext(context.WithValue(r.Context(), key, value))
 }
 
 func getValue(r *http.Request, key any) any {
@@ -40,7 +40,7 @@ func respondWithAppError(w http.ResponseWriter, err error) {
 	if errors.As(err, &appErr) {
 		respondWithJSON(w, &Response{
 			statusCode: appErr.Code,
-			body:       appErr.Err.Error(),
+			body:       H{"error": appErr.Err.Error()},
 		})
 		return
 	}

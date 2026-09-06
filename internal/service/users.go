@@ -1,9 +1,9 @@
 package service
 
 import (
-	"github.com/vonrimez/TaskAPI/domain"
-	"github.com/vonrimez/TaskAPI/internal/auth"
-	"github.com/vonrimez/TaskAPI/internal/models"
+	"github.com/vonrimez/TaskAPI/internal/common/auth"
+	"github.com/vonrimez/TaskAPI/internal/common/domain"
+	"github.com/vonrimez/TaskAPI/internal/common/models"
 )
 
 type UserRepository interface {

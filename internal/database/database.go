@@ -14,7 +14,7 @@ func EstablishConnection(dbDriver string, dbUrl string) (*sql.DB, error) {
 	err = db.Ping()
 	if err != nil {
 		db.Close()
-		return nil, err // fmt.Errorf("error: could not connect with databse")
+		return nil, err //fmt.Errorf("error: could not connect with databse")
 	}
 
 	db.SetMaxOpenConns(2)

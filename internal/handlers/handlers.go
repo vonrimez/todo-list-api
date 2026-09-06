@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/vonrimez/TaskAPI/domain"
-	"github.com/vonrimez/TaskAPI/internal/models"
+	"github.com/vonrimez/TaskAPI/internal/common/domain"
+	"github.com/vonrimez/TaskAPI/internal/common/models"
 	"github.com/vonrimez/TaskAPI/internal/service"
 )
 
@@ -34,7 +34,7 @@ func getUserID(r *http.Request) (int, error) {
 	rawID := getValue(r, UserID)
 	id, isInt := rawID.(int)
 	if !isInt {
-		return 0, domain.NewBadRequestError("invalid parameter \"ID\"")
+		return 0, domain.NewBadRequestError("invalid parameter 'ID'")
 	}
 	return id, nil
 }
