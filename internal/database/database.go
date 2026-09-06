@@ -2,7 +2,6 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -15,7 +14,7 @@ func EstablishConnection(dbDriver string, dbUrl string) (*sql.DB, error) {
 	err = db.Ping()
 	if err != nil {
 		db.Close()
-		return nil, fmt.Errorf("error: could not connect with databse")
+		return nil, err //fmt.Errorf("error: could not connect with databse")
 	}
 
 	db.SetMaxOpenConns(2)

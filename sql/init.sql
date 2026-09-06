@@ -11,10 +11,11 @@ CREATE TABLE users (
 );
 
 CREATE TABLE tasks (
-    id SERIAL PRIMARY KEY,
+    id BIGINT,
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, id),
     title VARCHAR(50),
-    description TEXT NOT NULL,
+    description VARCHAR(255) NOT NULL,
     status TASK_STATUS,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()

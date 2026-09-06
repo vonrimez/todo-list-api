@@ -1,21 +1,21 @@
 package main
 
 import (
-	"fmt"
+	"log"
 
-	"github.com/gin-gonic/gin"
-	"github.com/vonrimez/TaskAPI/config"
+	"github.com/vonrimez/TaskAPI/internal/common/config"
 	"github.com/vonrimez/TaskAPI/internal/database"
 	"github.com/vonrimez/TaskAPI/internal/handlers"
 	"github.com/vonrimez/TaskAPI/internal/service"
+	"github.com/vonrimez/TaskAPI/server"
 )
 
 func main() {
 
 	cfg := config.LoadConfig()
 
-	fmt.Println("Starting server")
-	fmt.Println("Connecting with database...")
+	log.Println("Starting server")
+	log.Println("Connecting with database...")
 
 	db, err := database.EstablishConnection("pgx", cfg.DBURL)
 	if err != nil {
@@ -23,43 +23,29 @@ func main() {
 	}
 	defer db.Close()
 
-	fmt.Println("Server successfully connected with database")
+	log.Println("Server successfully connected with database")
 
-	taskRepo := database.GetNewTasksDB(db)
-	userRepo := database.GetNewUserDB(db)
+	taskRepo := database.NewTaskDB(db)
+	userRepo := database.NewUserDB(db)
 
 	taskService := service.NewTaskService(taskRepo)
 	userService := service.NewUserService(userRepo, cfg.JWTSecret)
 
-	hdl := handlers.GetNewHandler(
-		taskService, userService,
+	validate := service.NewValidate()
+
+	hdl := handlers.NewHandler(
+		taskService, userService, validate,
 	)
 
-	taskApi := gin.Default()
-	taskApi.Use(hdl.StatusLogger)
+	server := server.NewServer(cfg.PORT)
+	server.InitRouting(hdl)
 
-	v1 := taskApi.Group("/api/v1")
-	{
-		user := v1.Group("/user")
-		{
-			user.POST("/login", hdl.UserLogin)
-			user.POST("/register", hdl.UserRegister)
-		}
-		tasks := v1.Group("/task")
-		tasks.Use(hdl.JWTAuth)
-		{
-			tasks.GET("/list", hdl.GetTasks)
-			tasks.GET("/:id", hdl.GetTaskById)
-			tasks.DELETE("/:id", hdl.DeleteTask)
-			tasks.PUT("/:id", hdl.UpdateTask)
-			tasks.POST("/create", hdl.CreateTask)
-		}
-	}
+	log.Println("Running server")
 
-	fmt.Println("Running server")
-
-	err = taskApi.Run(cfg.PORT)
+	err = server.Run()
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
+
+	log.Println("Server was shitting down")
 }
